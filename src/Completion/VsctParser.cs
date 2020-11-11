@@ -24,7 +24,7 @@ namespace VsctCompletion.Completion
         {
             _source = source;
         }
-        
+
         public bool IsAttributeAllowed(string attributeName)
         {
             string[] allowed = new[] { "id", "guid", "package", "href", "editor", "context" };
@@ -41,7 +41,7 @@ namespace VsctCompletion.Completion
 
             if (TryGetXmlFragment(line, out XPathNavigator navigator))
             {
-                completions = GetCompletions(ReadXmlDocument(triggerLocation.Snapshot), navigator, attrName).ToArray();
+                completions = GetCompletions(triggerLocation.Snapshot, navigator, attrName).ToArray();
             }
 
             return completions != null;
@@ -91,14 +91,20 @@ namespace VsctCompletion.Completion
             }
         }
 
-        private IEnumerable<CompletionItem> GetCompletions(XmlDocument doc, XPathNavigator navigator, string attribute)
+        private IEnumerable<CompletionItem> GetCompletions(ITextSnapshot snapshot, XPathNavigator navigator, string attribute)
         {
-            IEnumerable<ICompletionProvider> providers = GetProviders(attribute);
             var list = new List<CompletionItem>();
 
-            foreach (ICompletionProvider provider in providers)
+            IEnumerable<ICompletionProvider> providers = GetProviders(attribute);
+
+            if (providers.Any())
             {
-                list.AddRange(provider.GetCompletions(doc, navigator, CreateCompletionItem));
+                XmlDocument doc = ReadXmlDocument(snapshot);
+
+                foreach (ICompletionProvider provider in providers)
+                {
+                    list.AddRange(provider.GetCompletions(doc, navigator, CreateCompletionItem));
+                }
             }
 
             return list;
